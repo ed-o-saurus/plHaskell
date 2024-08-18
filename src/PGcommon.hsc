@@ -24,7 +24,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
--- This module implements functions to allocate memory useing postgres' memory allocation.
+-- This module implements functions to allocate memory using postgres' memory allocation.
 -- This prevents memory leaks in case of an ERROR event.
 
 #include "plhaskell.h"
@@ -51,7 +51,7 @@ newtype Oid = Oid CUInt deriving newtype (Eq, Num, Storable)
 
 assert :: Bool -> IO () -> IO ()
 assert True _action = return ()
-assert False action = action -- pUseAsCString (encodeUtf8 msg) (plhaskellReport (#const ERROR))
+assert False action = action
 
 voidDatum :: Datum
 voidDatum = Datum $ ptrToWordPtr nullPtr
