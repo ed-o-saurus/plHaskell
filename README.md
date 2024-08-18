@@ -239,7 +239,7 @@ The extension supports anonymous code blocks with the use of the `DO` keyword. C
 
 Functions can return sets of values by returning type `PGm [Maybe `*`result`*`]` or `IO [Maybe `*`result`*`]` where *`result`* is the appropriate Haskell type as determined by the return type of function.
 
-Set returning functions can return sets of voids by the Haskell code returing type `PGm [()]` or `IO [()]`.
+Set returning functions can return sets of voids by the Haskell code returning type `PGm [()]` or `IO [()]`.
 
 ### Reporting Messages and Raising Error
 
