@@ -32,16 +32,16 @@
 
 #include "HsFFI.h"
 
-#define VOID_TYPE      0
-#define BASE_TYPE      1
+#define VOID_TYPE 0
+#define BASE_TYPE 1
 #define COMPOSITE_TYPE 2
-#define ARRAY_TYPE     3
+#define ARRAY_TYPE 3
 
 // Represents a value passed or returned by a function
 struct TypeInfo
 {
-    uint16 value_type; // VOID_TYPE, BASE_TYPE, or COMPOSITE_TYPE
-    Oid type_oid; // OID of the type
+    uint16 value_type; // VOID_TYPE, BASE_TYPE, COMPOSITE_TYPE, or ARRAY_TYPE
+    Oid type_oid;      // OID of the type
     int16 type_len;
     bool type_byval;
     char type_align;
@@ -50,10 +50,10 @@ struct TypeInfo
     {
         struct // COMPOSITE
         {
-            int16 count; // Number of fields of the composite
-            int16 natts; // Number of attributes
-            int16 *attnums; // Attribute numbers of the members
-            TupleDesc tupdesc; // Tuple Descriptor
+            int16 count;              // Number of fields of the composite
+            int16 natts;              // Number of attributes
+            int16 *attnums;           // Attribute numbers of the members
+            TupleDesc tupdesc;        // Tuple Descriptor
             struct TypeInfo **fields; // Fields of the composite type
         };
 
@@ -68,20 +68,20 @@ struct TypeInfo
 // Represents the information about a function call
 struct CallInfo
 {
-    char *func_name; // Name of function
-    char *mod_file_name; // Temporary file where code is stored
-    bool trusted; // Is the language the trusted version?
-    int16 nargs; // Number of arguments
-    struct TypeInfo **args; // Arguments
+    char *func_name;         // Name of function
+    char *mod_file_name;     // Temporary file where code is stored
+    bool trusted;            // Is the language the trusted version?
+    int16 nargs;             // Number of arguments
+    struct TypeInfo **args;  // Arguments
     struct TypeInfo *result; // Returned result
-    bool return_set; // Does the function return a set of values?
-    bool spi_read_only; // Use read-only mode on internal queries
-    bool atomic; // Is this an atomic transaction?
+    bool return_set;         // Does the function return a set of values?
+    bool spi_read_only;      // Use read-only mode on internal queries
+    bool atomic;             // Is this an atomic transaction?
 
     union
     {
         Datum (*function)(NullableDatum *args, bool *isnull); // Pointer to the function to be called to read Args and populate Result
-        HsStablePtr list; // Stable pointer to list of results
+        HsStablePtr list;                                     // Stable pointer to list of results
     };
 
     struct CallInfo *prev; // Used to link list of all active CallInfos
@@ -100,9 +100,9 @@ Datum write_composite(struct TypeInfo *p_type_info, Datum *field_values, bool *f
 Datum write_array(struct TypeInfo *pTypeInfo, Datum *elems, bool *nulls, int ndims, int *dims, int *lbs);
 ArrayType *get_array_type(Datum datum);
 int get_ndim(ArrayType *array);
-int* get_lbs_ptr(ArrayType *array);
-int* get_dims_ptr(ArrayType *array);
-void get_array_elems(struct TypeInfo *pTypeInfo, ArrayType *array, int nelems, Datum* elems, bool* nulls);
+int *get_lbs_ptr(ArrayType *array);
+int *get_dims_ptr(ArrayType *array);
+void get_array_elems(struct TypeInfo *pTypeInfo, ArrayType *array, int nelems, Datum *elems, bool *nulls);
 
 // Functions for SPI queries
 int run_query(const char *command, int nargs, Oid *argtypes, Datum *values, bool *is_nulls);
@@ -122,11 +122,11 @@ void bad_multi_dim_array();
 void expected_type(Oid type_oid);
 void expected_composite();
 void expected_array();
-void expected_type_in_query(struct TypeInfo* p_type_info);
-void incorrect_length(struct TypeInfo* p_type_info);
+void expected_type_in_query(struct TypeInfo *p_type_info);
+void incorrect_length(struct TypeInfo *p_type_info);
 void higher_dim_arrays();
 void unknown_compiler_error();
-void error_func_sig(char* func_sig);
-void language_error(int elevel, char* msg);
+void error_func_sig(char *func_sig);
+void language_error(int elevel, char *msg);
 
 #endif
