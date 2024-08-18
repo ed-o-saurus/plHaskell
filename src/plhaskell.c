@@ -56,7 +56,7 @@ static void rts_debug_msg_fn(const char *s, va_list ap);
 
 static void rts_fatal_msg_fn(const char *s, va_list ap);
 
-static void unlink_all(int code, Datum arg);
+static void mod_exit(int code, Datum arg);
 
 static struct CallInfo *current_p_call_info = NULL;
 static struct CallInfo *first_p_call_info = NULL; // Points to list of all active CallInfos
@@ -791,7 +791,7 @@ static void enter(void)
     RtsConfig conf = defaultRtsConfig;
     char tempdirpath[MAXPGPATH];
 
-    on_proc_exit(unlink_all, (Datum)0);
+    on_proc_exit(mod_exit, (Datum)0);
 
     parameterTypes = (oidvector *)palloc0(offsetof(oidvector, values) + sizeof(Oid));
     SET_VARSIZE(parameterTypes, offsetof(oidvector, values) + sizeof(Oid));
@@ -982,8 +982,10 @@ void free_tuptable(struct SPITupleTable *tuptable)
 }
 
 // Delete temp files from all active CallInfos
-static void unlink_all(int code, Datum arg)
+static void mod_exit(int _code, Datum arg)
 {
+    hs_exit();
+
     for (struct CallInfo *p_call_info = first_p_call_info; p_call_info; p_call_info = p_call_info->next)
         if (p_call_info->mod_file_name)
             unlink(p_call_info->mod_file_name);
