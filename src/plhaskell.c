@@ -984,8 +984,6 @@ void free_tuptable(struct SPITupleTable *tuptable)
 // Delete temp files from all active CallInfos
 static void mod_exit(int _code, Datum arg)
 {
-    hs_exit();
-
     for (struct CallInfo *p_call_info = first_p_call_info; p_call_info; p_call_info = p_call_info->next)
         if (p_call_info->mod_file_name)
             unlink(p_call_info->mod_file_name);
