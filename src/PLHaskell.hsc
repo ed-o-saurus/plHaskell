@@ -150,9 +150,9 @@ makeDecodeArgDef pTypeInfo = let
             (#const COMPOSITE_TYPE) -> do
                 count <- getCount pTypeInfo
                 decodeFieldDefs <- getFields pTypeInfo >>= zipWithM decodeFieldDef [0 ..]
-                let fieldIdxes = range count
-                let fieldDatumsList = "[" ++ (intercalate ", " (map (interpolate "fieldMDatum?") fieldIdxes)) ++ "]"
-                let fieldsTuple = "(" ++ (intercalate ", " (map (interpolate "field?") fieldIdxes)) ++ ")"
+                let fieldIndexes = range count
+                let fieldDatumsList = "[" ++ (intercalate ", " (map (interpolate "fieldMDatum?") fieldIndexes)) ++ "]"
+                let fieldsTuple = "(" ++ (intercalate ", " (map (interpolate "field?") fieldIndexes)) ++ ")"
                 return $ "(maybeWrap $ \\datum -> do {" ++
                         fieldDatumsList ++ " <- readComposite " ++ pTypeInfoAddr ++ " datum;" ++
                         concat decodeFieldDefs ++
@@ -181,9 +181,9 @@ makeEncodeResultDef pTypeInfo = let
             (#const COMPOSITE_TYPE) -> do
                 count <- getCount pTypeInfo
                 encodeFieldDefs <- getFields pTypeInfo >>= zipWithM encodeFieldDef [0 ..]
-                let fieldIdxes = range count
-                let fieldDatumsList = " [" ++ (intercalate ", " (map (interpolate "fieldMDatum?") fieldIdxes)) ++ "]"
-                let fieldsTuple = "(" ++ (intercalate ", " (map (interpolate "field?") fieldIdxes)) ++ ")"
+                let fieldIndexes = range count
+                let fieldDatumsList = " [" ++ (intercalate ", " (map (interpolate "fieldMDatum?") fieldIndexes)) ++ "]"
+                let fieldsTuple = "(" ++ (intercalate ", " (map (interpolate "field?") fieldIndexes)) ++ ")"
                 return $ "(maybeWrap $ \\" ++ fieldsTuple ++ " -> do {" ++
                     concat encodeFieldDefs ++
                    "writeComposite " ++ pTypeInfoAddr ++ fieldDatumsList ++ "})"
@@ -233,17 +233,17 @@ setUpEvalInt pCallInfo = do
 
     -- Number of arguments
     nargs <- liftIO $ (#peek struct CallInfo, nargs) pCallInfo
-    let argIdxes = range nargs
+    let argIndexes = range nargs
 
     -- Fill all decodeArg? values with functions to decode arguments
-    mapM_ (defineDecodeArg pCallInfo) argIdxes
+    mapM_ (defineDecodeArg pCallInfo) argIndexes
 
     -- Fill encodeResult value with function to return Maybe Datum
     pResultTypeInfo <- liftIO $ (#peek struct CallInfo, result) pCallInfo
     encodeResultDef <- liftIO $ makeEncodeResultDef pResultTypeInfo
     runStmt $ "let encodeResult = " ++ encodeResultDef
 
-    return (argIdxes, funcName, toBool trusted)
+    return (argIndexes, funcName, toBool trusted)
 
 foreign import capi safe "plhaskell.h unknown_compiler_error"
     unknownComilerError :: IO ()
@@ -293,11 +293,11 @@ checkSignature pCallInfo = execute $ do
 foreign export capi "mk_function" mkFunction :: Ptr CallInfo -> IO ()
 mkFunction :: Ptr CallInfo -> IO ()
 mkFunction pCallInfo = execute $ do
-    (argIdxes, funcName, trusted) <- setUpEvalInt pCallInfo
+    (argIndexes, funcName, trusted) <- setUpEvalInt pCallInfo
 
     -- Build the Function
-    let prog_decode_args = concatMap (interpolate "arg? <- peekElemOff pArgs ? >>= return . unNullableDatum >>= decodeArg?;") argIdxes
-    let argsNames = concatMap (interpolate " arg?") argIdxes
+    let prog_decode_args = concatMap (interpolate "arg? <- peekElemOff pArgs ? >>= return . unNullableDatum >>= decodeArg?;") argIndexes
+    let argsNames = concatMap (interpolate " arg?") argIndexes
     let prog_call = if trusted
         then "result <- unPGm $ PGmodule." ++ funcName ++ argsNames ++ ";"
         else "result <-         PGmodule." ++ funcName ++ argsNames ++ ";"
@@ -312,14 +312,14 @@ mkFunction pCallInfo = execute $ do
 foreign export capi "mk_list" mkList :: Ptr CallInfo -> Ptr NullableDatum -> IO ()
 mkList :: Ptr CallInfo -> Ptr NullableDatum -> IO ()
 mkList pCallInfo pArgs = execute $ do
-    (argIdxes, funcName, trusted) <- setUpEvalInt pCallInfo
+    (argIndexes, funcName, trusted) <- setUpEvalInt pCallInfo
 
     -- Get the arguments
     setPtr "pArgs" pArgs
-    mapM_ (runStmt . (interpolate "arg? <- peekElemOff pArgs ? >>= return . unNullableDatum >>= decodeArg?")) argIdxes
+    mapM_ (runStmt . (interpolate "arg? <- peekElemOff pArgs ? >>= return . unNullableDatum >>= decodeArg?")) argIndexes
 
     -- Set returnResultList to be a list of actions each of which loads a result into the result TypeInfo struct
-    let argsNames = concatMap (interpolate " arg?") argIdxes
+    let argsNames = concatMap (interpolate " arg?") argIndexes
     if trusted
         then runStmt $ "results <- unPGm $ PGmodule." ++ funcName ++ argsNames
         else runStmt $ "results <-         PGmodule." ++ funcName ++ argsNames
