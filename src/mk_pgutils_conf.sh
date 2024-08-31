@@ -18,16 +18,13 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-cat - << EOF
-name:            pgutils
-version:         4.0
-visibility:      public
-id:              pgutils-4.0
-key:             pgutils-4.0
-license:         GPL
-synopsis:        PL/Haskell Utilities
-exposed:         True
-exposed-modules: PGutils PGsupport PGcommon
-EOF
-
-echo import-dirs:\ \ \ \ \ $1
+echo "name:            pgutils"
+echo "version:         4.0"
+echo "visibility:      public"
+echo "id:              pgutils-4.0"
+echo "key:             pgutils-4.0"
+echo "license:         GPL"
+echo "synopsis:        PL/Haskell Utilities"
+echo "exposed:         True"
+echo "exposed-modules: PGutils PGsupport PGcommon"
+echo "import-dirs:     $1"
