@@ -784,9 +784,10 @@ static void enter(void)
     HeapTuple proctup;
     Datum procoid;
     bool is_null;
-    char GHC_PackagePath[MAXPGPATH + 18];
-    static int argc = 4;
-    static char *argv[] = {"PLHaskell", "+RTS", "--install-signal-handlers=no", "-V0", NULL}; // Configuration for the RTS
+    static int argc = 3;
+    static char *argv[] = {"PLHaskell", "+RTS", // Configuration for the RTS
+                           "-K0",               // No limit on stack size. It's handled by gcDoneHook.
+                           NULL};
     static char **pargv = argv;
     RtsConfig conf = defaultRtsConfig;
     char tempdirpath[MAXPGPATH];
