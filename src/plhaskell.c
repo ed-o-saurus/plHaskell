@@ -819,10 +819,6 @@ static void enter(void)
     ReleaseSysCache(proctup);
     pfree(parameterTypes);
 
-    // Add the directory containing PGutils to the GHC Package Path
-    snprintf(GHC_PackagePath, MAXPGPATH + 18, "%s/plhaskell_pkg_db:", pkglib_path); // Note the colon
-    setenv("GHC_PACKAGE_PATH", GHC_PackagePath, true);
-
     TempTablespacePath(tempdirpath, DEFAULTTABLESPACE_OID);
     MakePGDirectory(tempdirpath);
     setenv("TMPDIR", tempdirpath, true);

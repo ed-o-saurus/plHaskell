@@ -26,20 +26,21 @@
 
 module PLHaskell () where
 
-import Control.Monad                (mapM, mapM_, (>=>), zipWithM)
-import Data.Int                     (Int16, Int32)
-import Data.List                    (intercalate)
-import Data.Maybe                   (fromMaybe)
-import Foreign.C.String             (CString, peekCString)
-import Foreign.C.Types              (CBool (CBool), CInt (CInt), CUInt (CUInt))
-import Foreign.Marshal.Utils        (fromBool, toBool)
-import Foreign.Ptr                  (Ptr, nullPtr, plusPtr, ptrToWordPtr, WordPtr (WordPtr))
-import Foreign.StablePtr            (castPtrToStablePtr, deRefStablePtr, freeStablePtr, newStablePtr)
-import Foreign.Storable             (peek, peekByteOff, peekElemOff, poke)
-import Language.Haskell.Interpreter (Extension (OverloadedStrings, Safe), ImportList (ImportList), Interpreter, InterpreterError (GhcException, NotAllowed, UnknownError, WontCompile), ModuleImport (ModuleImport), ModuleQualification (NotQualified, QualifiedAs), OptionVal ((:=)), errMsg, ghcVersion, installedModulesInScope, languageExtensions, liftIO, loadModules, runInterpreter, runStmt, set, setImportsF, typeChecks)
-import Prelude                      (Bool (False), Either (Left, Right), IO, Maybe (Just, Nothing), String, concat, concatMap, fromIntegral, map, not, null, return, show, undefined, ($), (++), (.), (>>=))
+import Control.Monad                       (mapM, mapM_, (>=>), zipWithM)
+import Data.Int                            (Int16, Int32)
+import Data.List                           (intercalate)
+import Data.Maybe                          (fromMaybe)
+import Foreign.C.String                    (CString, peekCString)
+import Foreign.C.Types                     (CBool (CBool), CInt (CInt), CUInt (CUInt))
+import Foreign.Marshal.Utils               (fromBool, toBool)
+import Foreign.Ptr                         (Ptr, nullPtr, plusPtr, ptrToWordPtr, WordPtr (WordPtr))
+import Foreign.StablePtr                   (castPtrToStablePtr, deRefStablePtr, freeStablePtr, newStablePtr)
+import Foreign.Storable                    (peek, peekByteOff, peekElemOff, poke)
+import Language.Haskell.Interpreter        (Extension (OverloadedStrings, Safe), ImportList (ImportList), Interpreter, InterpreterError (GhcException, NotAllowed, UnknownError, WontCompile), ModuleImport (ModuleImport), ModuleQualification (NotQualified, QualifiedAs), OptionVal ((:=)), errMsg, ghcVersion, installedModulesInScope, languageExtensions, liftIO, loadModules, runStmt, set, setImportsF, typeChecks)
+import Language.Haskell.Interpreter.Unsafe (unsafeRunInterpreterWithArgs)
+import Prelude                             (Bool (False), Either (Left, Right), IO, Maybe (Just, Nothing), String, concat, concatMap, fromIntegral, map, not, null, return, show, undefined, ($), (++), (.), (>>=))
 
-import PGcommon                     (CallInfo, Datum (Datum), NullableDatum, Oid (Oid), TypeInfo, assert, getCount, getElement, getFields, getTypeOid, getValueType, pWithCString, range, voidDatum)
+import PGcommon                            (CallInfo, Datum (Datum), NullableDatum, Oid (Oid), TypeInfo, assert, getCount, getElement, getFields, getTypeOid, getValueType, pWithCString, range, voidDatum)
 
 -- Replace all instances of ? with i
 interpolate :: String -> Int16 -> String
@@ -245,10 +246,14 @@ foreign import capi safe "plhaskell.h language_error"
 languageError :: String -> IO ()
 languageError msg = (pWithCString msg) (c_languageError (#const ERROR))
 
+foreign import ccall safe "utils/global.h &pkglib_path"
+    pPkgLibPath :: CString
+
 -- Execute an interpreter monad and handle the result
 execute :: Interpreter () -> IO ()
 execute int = do
-    r <- runInterpreter int
+    pkgLibPath <- peekCString pPkgLibPath 
+    r <- unsafeRunInterpreterWithArgs ["-clear-package-db", "-package-db", pkgLibPath ++ "/plhaskell_pkg_db", "-global-package-db"] int
     case r of
         Left (UnknownError msg)    -> languageError msg
         Left (WontCompile [])      -> unknownComilerError
