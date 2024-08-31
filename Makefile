@@ -20,13 +20,15 @@ SHELL = /bin/sh
 
 GHC_VERSION = $(shell ghc --numeric-version)
 
-RTS_NAME  = $(shell ghc-pkg --simple-output field rts  hs-libraries)
-HINT_NAME = $(shell ghc-pkg --simple-output field hint hs-libraries)
-TEXT_NAME = $(shell ghc-pkg --simple-output field text hs-libraries)
+RTS_NAME        = $(shell ghc-pkg --simple-output field rts        hs-libraries)
+HINT_NAME       = $(shell ghc-pkg --simple-output field hint       hs-libraries)
+TEXT_NAME       = $(shell ghc-pkg --simple-output field text       hs-libraries)
+BYTESTRING_NAME = $(shell ghc-pkg --simple-output field bytestring hs-libraries)
 
-RTS_LIB_DIR      = $(shell ghc-pkg --simple-output field rts  library-dirs)
-HINT_DYN_LIB_DIR = $(shell ghc-pkg --simple-output field hint dynamic-library-dirs)
-TEXT_DYN_LIB_DIR = $(shell ghc-pkg --simple-output field text dynamic-library-dirs)
+RTS_LIB_DIR            = $(shell ghc-pkg --simple-output field rts        library-dirs)
+HINT_DYN_LIB_DIR       = $(shell ghc-pkg --simple-output field hint       dynamic-library-dirs)
+TEXT_DYN_LIB_DIR       = $(shell ghc-pkg --simple-output field text       dynamic-library-dirs)
+BYTESTRING_DYN_LIB_DIR = $(shell ghc-pkg --simple-output field bytestring dynamic-library-dirs)
 
 PG_INCLUDE_DIR = $(shell pg_config --includedir-server)
 PG_SHARE_DIR   = $(shell pg_config --sharedir)
@@ -46,7 +48,7 @@ clean :
 distclean: clean
 
 src/plhaskell.so : src/plhaskell.o src/PLHaskell.o src/PGutils.o src/PGsupport.o src/PGcommon.o
-	ghc -Wall -O1 -Werror -optc -Wall -fforce-recomp $^ -o $@ -dynamic -shared -L$(RTS_LIB_DIR) -L$(HINT_DYN_LIB_DIR) -L$(TEXT_DYN_LIB_DIR) -l$(RTS_NAME)-ghc$(GHC_VERSION) -l$(HINT_NAME)-ghc$(GHC_VERSION) -l$(TEXT_NAME)-ghc$(GHC_VERSION) -optl-Wl,-rpath,$(RTS_LIB_DIR):$(HINT_DYN_LIB_DIR):$(TEXT_DYN_LIB_DIR)
+	ghc -Wall -O1 -Werror -optc -Wall -fforce-recomp $^ -o $@ -dynamic -shared -L$(RTS_LIB_DIR) -L$(HINT_DYN_LIB_DIR) -L$(TEXT_DYN_LIB_DIR) -L$(BYTESTRING_DYN_LIB_DIR) -l$(RTS_NAME)-ghc$(GHC_VERSION) -l$(HINT_NAME)-ghc$(GHC_VERSION) -l$(TEXT_NAME)-ghc$(GHC_VERSION) -l$(BYTESTRING_NAME)-ghc$(GHC_VERSION) -optl-Wl,-rpath,$(RTS_LIB_DIR):$(HINT_DYN_LIB_DIR):$(TEXT_DYN_LIB_DIR):$(BYTESTRING_DYN_LIB_DIR)
 
 src/plhaskell.o : src/plhaskell.c src/PLHaskell_stub.h src/plhaskell.h
 	ghc -Wall -O1 -Werror -optc -Wall -fforce-recomp -c src/plhaskell.c -o $@ -I$(PG_INCLUDE_DIR) -I. -D_GNU_SOURCE -fPIC
