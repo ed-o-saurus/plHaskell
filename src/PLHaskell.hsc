@@ -30,7 +30,6 @@ import Control.Monad                (mapM, mapM_, (>=>), zipWithM)
 import Data.Int                     (Int16, Int32)
 import Data.List                    (intercalate)
 import Data.Maybe                   (fromMaybe)
-import Data.Word                    (Word16)
 import Foreign.C.String             (CString, peekCString)
 import Foreign.C.Types              (CBool (CBool), CInt (CInt), CUInt (CUInt))
 import Foreign.Marshal.Utils        (fromBool, toBool)
@@ -40,7 +39,7 @@ import Foreign.Storable             (peek, peekByteOff, peekElemOff, poke)
 import Language.Haskell.Interpreter (Extension (OverloadedStrings, Safe), ImportList (ImportList), Interpreter, InterpreterError (GhcException, NotAllowed, UnknownError, WontCompile), ModuleImport (ModuleImport), ModuleQualification (NotQualified, QualifiedAs), OptionVal ((:=)), errMsg, ghcVersion, installedModulesInScope, languageExtensions, liftIO, loadModules, runInterpreter, runStmt, set, setImportsF, typeChecks)
 import Prelude                      (Bool (False), Either (Left, Right), IO, Maybe (Just, Nothing), String, concat, concatMap, fromIntegral, map, not, null, return, show, undefined, ($), (++), (.), (>>=))
 
-import PGcommon                     (CallInfo, Datum (Datum), NullableDatum, Oid (Oid), TypeInfo, assert, getCount, getElement, getFields, pWithCString, range, voidDatum)
+import PGcommon                     (CallInfo, Datum (Datum), NullableDatum, Oid (Oid), TypeInfo, assert, getCount, getElement, getFields, getTypeOid, getValueType, pWithCString, range, voidDatum)
 
 -- Replace all instances of ? with i
 interpolate :: String -> Int16 -> String
@@ -80,14 +79,6 @@ getModFileName pCallInfo = liftIO $ (#peek struct CallInfo, mod_file_name) pCall
 -- Extract function name from CallInfo struct
 getFuncName :: Ptr CallInfo -> Interpreter String
 getFuncName pCallInfo = liftIO $ (#peek struct CallInfo, func_name) pCallInfo >>= peekCString
-
--- Extract the value type from TypeInfo struct
-getValueType :: Ptr TypeInfo -> IO Word16
-getValueType = (#peek struct TypeInfo, value_type)
-
--- Extract type_oid from TypeInfo struct
-getTypeOid :: Ptr TypeInfo -> IO Oid
-getTypeOid = (#peek struct TypeInfo, type_oid)
 
 setPtr :: String -> Ptr a -> Interpreter ()
 setPtr name ptr = runStmt $ "let " ++ name ++ " = wordPtrToPtr " ++ show (ptrToWordPtr ptr)

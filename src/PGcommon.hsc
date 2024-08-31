@@ -29,10 +29,11 @@
 
 #include "plhaskell.h"
 
-module PGcommon (ArrayType, CallInfo, Datum (Datum), NullableDatum, Oid (Oid), TypeInfo, assert, getCount, getElement, getFields, palloc, pallocArray, pUseAsCString, pWithArray, pWithArrayLen, pWithCString, pWithCString2, range, unNullableDatum, voidDatum) where
+module PGcommon (ArrayType, CallInfo, Datum (Datum), NullableDatum, Oid (Oid), TypeInfo, assert, getCount, getElement, getTypeOid, getValueType, getFields, palloc, pallocArray, pUseAsCString, pWithArray, pWithArrayLen, pWithCString, pWithCString2, range, unNullableDatum, voidDatum) where
 
 import Data.ByteString       (ByteString, useAsCStringLen)
 import Data.Int              (Int16)
+import Data.Word             (Word16)
 import Foreign.C.String      (CString, CStringLen, withCStringLen)
 import Foreign.C.Types       (CBool (CBool), CSize (CSize), CUInt (CUInt))
 import Foreign.Marshal.Array (pokeArray)
@@ -56,7 +57,15 @@ assert False action = action
 voidDatum :: Datum
 voidDatum = Datum $ ptrToWordPtr nullPtr
 
--- Extract count of sub-fields from TypeInfo sruct
+-- Extract the value type from TypeInfo struct
+getValueType :: Ptr TypeInfo -> IO Word16
+getValueType = (#peek struct TypeInfo, value_type)
+
+-- Extract type_oid from TypeInfo struct
+getTypeOid :: Ptr TypeInfo -> IO Oid
+getTypeOid = (#peek struct TypeInfo, type_oid)
+
+-- Extract count of sub-fields from TypeInfo struct
 getCount :: Ptr TypeInfo -> IO Int16
 getCount = (#peek struct TypeInfo, count)
 

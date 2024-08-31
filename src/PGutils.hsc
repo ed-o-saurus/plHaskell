@@ -37,7 +37,7 @@ import Data.Int              (Int16, Int32, Int64)
 import Data.Functor          ((<$>))
 import Data.Text             (Text, pack, unpack)
 import Data.Text.Encoding    (encodeUtf8)
-import Data.Word             (Word16, Word64)
+import Data.Word             (Word64)
 import Foreign.C.String      (peekCString, CString)
 import Foreign.C.Types       (CBool (CBool), CInt (CInt), CUInt (CUInt))
 import Foreign.Marshal.Array (allocaArray)
@@ -48,7 +48,7 @@ import Prelude               (Applicative, Bool (False, True), Char, Double, Flo
 import System.IO.Unsafe      (unsafePerformIO)
 
 import PGsupport             (Array (..), Datum (Datum), BaseType (decode, encode), TypeInfo, arrayMap, arrayMapM, readArray, readComposite, writeArray, writeComposite, maybeWrap)
-import PGcommon              (Oid (Oid), assert, getCount, getElement, getFields, pUseAsCString, pWithArray, pWithArrayLen, pWithCString, pWithCString2, range, voidDatum)
+import PGcommon              (Oid (Oid), assert, getCount, getElement, getFields, getTypeOid, getValueType, pUseAsCString, pWithArray, pWithArrayLen, pWithCString, pWithCString2, range, voidDatum)
 
 data TupleTable
 newtype PGm a = PGm {unPGm :: IO a} deriving newtype (Functor, Applicative, Monad)
@@ -93,13 +93,6 @@ data QueryParam = QueryParamByteA                        (Maybe ByteString)
                 | QueryParamFloat8                       (Maybe Double)
                 | QueryParamComposite (Maybe Text, Text) (Maybe [QueryParam])
                 | QueryParamArray     (Maybe Text, Text) (Maybe (Array QueryParam))
-
--- Extract the value type from TypeInfo struct
-getValueType :: Ptr TypeInfo -> IO Word16
-getValueType = (#peek struct TypeInfo, value_type)
-
-getTypeOid :: Ptr TypeInfo -> IO Oid
-getTypeOid = (#peek struct TypeInfo, type_oid)
 
 getNatts :: Ptr TupleTable -> IO Int16
 getNatts pTupleTable = (#peek struct SPITupleTable, tupdesc) pTupleTable >>= (#peek struct TupleDescData, natts)
