@@ -247,6 +247,7 @@ To report a message or raise an error, use the function `report :: ErrorLevel ->
 
   Level   |
 --------- |
+fatal     |
 exception |
 warning   |
 notice    |

@@ -28,7 +28,7 @@
 
 #include "plhaskell.h"
 
-module PGutils (PGm, ErrorLevel, arrayMap, arrayMapM, commit, debug5, debug4, debug3, debug2, debug1, log, info, notice, warning, exception, report, raiseError, rollback, unPGm, Array (..), QueryParam (..), query, QueryResultValue (..), QueryResults (..)) where
+module PGutils (PGm, ErrorLevel, arrayMap, arrayMapM, commit, debug5, debug4, debug3, debug2, debug1, log, info, notice, warning, exception, report, fatal, raiseError, rollback, unPGm, Array (..), QueryParam (..), query, QueryResultValue (..), QueryResults (..)) where
 
 import Control.Monad         (zipWithM)
 import Control.Monad.Fail    (MonadFail (fail))
@@ -53,7 +53,7 @@ import PGcommon              (Oid (Oid), assert, getCount, getElement, getFields
 data TupleTable
 newtype PGm a = PGm {unPGm :: IO a} deriving newtype (Functor, Applicative, Monad)
 
-newtype ErrorLevel = ErrorLevel {unErrorLevel :: CInt}
+newtype ErrorLevel = ErrorLevel CInt
 #{enum ErrorLevel, ErrorLevel,
     debug5    = DEBUG5,
     debug4    = DEBUG4,
@@ -64,14 +64,15 @@ newtype ErrorLevel = ErrorLevel {unErrorLevel :: CInt}
     info      = INFO,
     notice    = NOTICE,
     warning   = WARNING,
-    exception = ERROR
+    exception = ERROR,
+    fatal     = FATAL
 }
 
 foreign import capi safe "plhaskell.h plhaskell_report"
-    plhaskellReport :: CInt -> CString -> IO ()
+    plhaskellReport :: ErrorLevel -> CString -> IO ()
 
 report :: ErrorLevel -> Text -> PGm ()
-report elevel msg = PGm $ pUseAsCString (encodeUtf8 msg) (plhaskellReport (unErrorLevel elevel))
+report elevel msg = PGm $ pUseAsCString (encodeUtf8 msg) (plhaskellReport elevel)
 
 raiseError :: Text -> a
 raiseError msg = unsafePerformIO $ do
